@@ -1,24 +1,5 @@
 package Server;
 
-
-
-// public class Main{
-
-//     public Main(){
-//         this.JDBCTest();
-//     }
-
-
-
-
-
-//     public static void main(String[] args) {
-//         new Main();
-//     }
-
-
-// }
-
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -142,8 +123,9 @@ public class ServerGUI extends Application {
                        portNumber = Integer.parseInt(portField.getText());
         
                        try{
-                        serverService = new ServerService(portNumber, serverInstructions, sideBox4Text);
+                        serverService = new ServerService(portNumber, serverInstructions, sideBox4Text, ServerGUI.this);
                         serverService.start();
+                        System.out.println("Getting Server");
                         server = serverService.getServer();
                         serverInstructions.setText("Server Started!");
                        }
@@ -159,17 +141,18 @@ public class ServerGUI extends Application {
         //Stop Server Button
                  stopServer.setOnAction(e->{
                     try{
-                        serverService.stopService();
                         if(server==null){
                             System.out.println("No server");
                         }
                         if(server!=null){
+                            System.out.println("Not null");
                             server.stopServer();
                         }
                         serverInstructions.setText("Server Stopped!");
 
                     }
                     catch(Exception error){
+                        error.printStackTrace();
                         serverInstructions.setText("Could not stop server.");
                     }
 
@@ -229,6 +212,10 @@ public class ServerGUI extends Application {
         dataView.setPlaceholder(new Label("No Users Found!"));
 
 
+    }
+
+    public void giveMeServer(Server s){
+        this.server = s;
     }
 
 

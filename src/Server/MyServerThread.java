@@ -4,8 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.*;
+import java.util.Map;
 
 import javafx.scene.text.Text;
 
@@ -18,10 +20,15 @@ public class MyServerThread extends Thread {
     Connection connection = null;
     BufferedReader reader;
     PrintWriter writer;
+    Server server;
 
-    public MyServerThread(Socket clientSocket, Text notificationText){
+    String timeStamp;
+    String ipAddress;
+
+    public MyServerThread(Socket clientSocket, Text notificationText, Server server){
         this.clientSocket = clientSocket;
         this.notificationText = notificationText;
+        this.server = server;
     }
 
     public void run(){
@@ -52,7 +59,12 @@ public class MyServerThread extends Thread {
                    if(!checkUser(clientFName, clientLName)){
                     this.logUser(clientFName, clientLName, pWord, clientIPAddress);
                     writer.println("AccountCreated");
-                    this.listenForMessages();
+
+                    User me = new User(clientFName, clientLName, ipAddress, timeStamp);
+                    server.addUser(me);
+                    server.getOnlineMap().put(me.toString(), clientSocket);
+
+                    this.listenForMessages(me);
                 }
                 else{
                     writer.println("AccountFailure");
@@ -67,7 +79,13 @@ public class MyServerThread extends Thread {
                 //IF LOGIN INFO IS CORRECT
                 if(checkLogIn(clientFName, clientLName, clientPass)){
                     writer.println("loginSuccess");
-                    this.listenForMessages();
+                    System.out.println("LoginSuccess");
+
+                    User me = new User(clientFName, clientLName, ipAddress, timeStamp);
+                    server.addUser(me);                    
+                    server.getOnlineMap().put(me.toString(), clientSocket);
+
+                    this.listenForMessages(me);
                 }
                 else{
                     writer.println("loginFail");
@@ -78,16 +96,65 @@ public class MyServerThread extends Thread {
 
         }
         catch(Exception e){
-            System.out.println("Error: " + e.getStackTrace());
+            e.printStackTrace();
         }
     }
 
-    public void listenForMessages() throws IOException{
-        notificationText.setText(clientFName + " " + clientLName + " has entered the server.");
-        writer.println("Welcome " + clientFName + " " + clientLName);
+    public void listenForMessages(User me) throws IOException{
+        notificationText.setText(me.toString() + " has entered the server.");
+        writer.println("Welcome " + me.toString());
+        writer.println(me.toString());
+
+
+        //Tell client how many other users there are online right now
+        writer.println(server.getOnlineMap().size());
+
+        //SEND ALL THE ONLINE USERS
+        for(String userID: server.getOnlineMap().keySet()){
+            if(!userID.equals(me.toString())){
+                writer.println(userID);
+            }
+
+        }
+
+        writer.println("Online Users Populated");
+
+        //The actual Listening bit
          while(true){
              String line = reader.readLine();
-             this.logMessage(line, clientFName, clientLName);
+             if(line.equals("NEW_USER_ENTRANCE")){
+
+             
+                for(Socket client: server.getOnlineMap().values())
+                {
+                    PrintWriter tempWriter = new PrintWriter(client.getOutputStream(), true);
+                    for(String user: server.getOnlineMap().keySet()){
+                        tempWriter.println("NEW_USER_WARNING");
+                        tempWriter.println(user);
+                    }
+                }
+             }
+             else if(line.equals("INCOMING_MESSAGE_X9%(*")){
+                System.out.println("I made it here");
+                String recepient = reader.readLine();
+                System.out.println(recepient);
+
+                
+                String message = reader.readLine();
+                System.out.println(message);
+
+
+                Socket recepientSocket = server.getOnlineMap().get(recepient);
+                PrintWriter tempWriter = new PrintWriter(recepientSocket.getOutputStream(), true);
+                tempWriter.println("MESSAGE_INCOMING");
+                tempWriter.println(message);
+                this.logMessage(message, me.toString(), recepient);
+             }
+             else{
+               // this.logMessage(line, clientFName, clientLName);
+               System.out.println("This shoudln't get called");
+
+             }
          }
 
     }
@@ -105,11 +172,15 @@ public class MyServerThread extends Thread {
         preparedStatement.setString(5, IPAddress);
 
         preparedStatement.executeUpdate();
+
+        this.timeStamp = timeStampString;
+        this.ipAddress = IPAddress;
+
     }
 
 
 
-    public void logMessage(String message, String FName, String LName){
+    public void logMessage(String message, String sender, String receiver){
 
         if(message.equals("Client Closing")){
             try{
@@ -123,23 +194,13 @@ public class MyServerThread extends Thread {
             try{
                 Timestamp messageTimestamp = new Timestamp(System.currentTimeMillis());
                 String messageTimestampString = messageTimestamp.toString();
-                PreparedStatement preparedStatementRetrieve = connection.prepareStatement("SELECT * FROM `users` WHERE `f_name` = ? AND `l_name` = ?;");
-                preparedStatementRetrieve.setString(1, FName);
-                preparedStatementRetrieve.setString(2, LName);
-                ResultSet rs = preparedStatementRetrieve.executeQuery();
-                String userTimestamp = "";
-                String userIP = "";
-                while(rs.next()){
-                    userTimestamp = rs.getString("creation_timestamp");
-                    userIP = rs.getString("creation_ip");
-                }
 
-                PreparedStatement preparedStatementInsert = connection.prepareStatement("INSERT INTO JoshBook.messages(`message`, `time_stamp`, `message_status`, `user_creation_timestamp`, `user_creation_ip`) VALUES (?, ?, ?, ?, ?);");
+                PreparedStatement preparedStatementInsert = connection.prepareStatement("INSERT INTO JoshBook.messages(`message`, `time_stamp`, `message_status`, `sender`, `receiver`) VALUES (?, ?, ?, ?, ?);");
                 preparedStatementInsert.setString(1, message);
                 preparedStatementInsert.setString(2, messageTimestampString);
                 preparedStatementInsert.setString(3, "Unread");
-                preparedStatementInsert.setString(4, userTimestamp);
-                preparedStatementInsert.setString(5, userIP);
+                preparedStatementInsert.setString(4, sender);
+                preparedStatementInsert.setString(5, receiver);
                 preparedStatementInsert.executeUpdate();                
             }
             catch(Exception e){
@@ -150,6 +211,11 @@ public class MyServerThread extends Thread {
         }
         
 
+    }
+
+    public void stopServer(ServerSocket serverSocket) throws IOException{
+        serverSocket.close();
+        serverSocket = null;
     }
 
     /**
@@ -183,6 +249,11 @@ public class MyServerThread extends Thread {
         ResultSet rs = preparedStatement.executeQuery();
 
         if(rs.isBeforeFirst()){
+            while(rs.next()){
+                timeStamp = rs.getString("creation_timestamp");
+                ipAddress = rs.getString("creation_ip");
+            }
+           
             return true;
         }
         else{

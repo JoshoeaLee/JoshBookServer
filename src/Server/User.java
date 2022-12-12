@@ -48,6 +48,14 @@ public class User {
     public void setTimeStamp(String timeStamp) {
         this.timeStamp = timeStamp;
     }
+    
+    public String toString(){
+        String ipStartSubstring = this.IPAddress.substring(0, 3);
+        String endTimestampSubstring = this.timeStamp.substring(this.timeStamp.length()-3);
+
+
+        return firstName + " " + lastName + "#" +  ipStartSubstring + endTimestampSubstring;
+    }
 
     
 }

@@ -3,59 +3,46 @@ package Server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import javafx.scene.text.Text;
 
-public class Server extends Thread{
+public class Server {
 
     int port;
     ServerSocket listener;
     Text notificationText;
+    ArrayList<User> onlineUsers = new ArrayList<>();
+    HashMap<String, Socket> onlineUsersMap = new HashMap<>();
 
-    public Server(int port, Text serverBoxText, Text notificationText) throws IOException{
+    public Server(int port, Text serverBoxText, Text notificationText, ServerGUI serverGUI) throws IOException{
+
         this.port = port;
         this.notificationText = notificationText;
         listener = new ServerSocket(port);
         serverBoxText.setText("Server started on port " + port);
+        serverGUI.giveMeServer(this);
         try{
             System.out.println("Initial Connection Made");
             while(true){
                 Socket clientSocket = listener.accept();
-                new MyServerThread(clientSocket, notificationText).start();
+                new MyServerThread(clientSocket, notificationText, this).start();
             }
             
         }
-        catch(Exception e){
-            System.out.println("Error: " + e.getStackTrace());
+        catch(SocketException e){
+           System.out.println("Server socket has been closed!");
+           System.out.println(listener);
         }
         finally{
             try {
-                listener.close();
+                if(!listener.isClosed()){
+                    listener.close();
+                    System.out.println("OH NO!");
+                }
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-
-
-    }
-
-    public void run(){
-        try{
-            System.out.println("Second or Later Connection Made");
-           while(true){
-                Socket clientSocket = listener.accept();
-                new MyServerThread(clientSocket, notificationText);
-           }
-        }
-        catch(Exception e){
-            System.out.println("Error: " + e.getStackTrace());
-        }
-        finally{
-            try {
-                listener.close();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -64,16 +51,27 @@ public class Server extends Thread{
 
     public void stopServer(){
         System.out.println("Closing Server.java class");
-        if(listener!=null){
+        if(!listener.isClosed()){
             try{
-                listener.close(); //Close the listener
-                listener = null; //Empty listener
+                new CloseServerThread(listener).start();
                 notificationText.setText("Server has been stopped");
             }catch(Exception e){
-                System.out.println("Error: " + e.getStackTrace());
+                e.printStackTrace();
             }
         }
-       
+     
+    }
+
+    public ArrayList<User> getOnlineUsers(){
+        return onlineUsers;
+    }
+
+    public void addUser(User user){
+        onlineUsers.add(user);
+    }
+
+    public HashMap<String, Socket> getOnlineMap(){
+        return onlineUsersMap;
     }
     
 }

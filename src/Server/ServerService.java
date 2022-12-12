@@ -1,6 +1,8 @@
 package Server;
 
 
+import java.io.IOException;
+
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
@@ -14,17 +16,20 @@ public class ServerService extends Service<String>{
     Server server;
     Text serverBoxText;
     Text notificationText;
+    ServerGUI serverGUI;
 
-    public ServerService(int port, Text serverBoxText, Text notificationText){
+    public ServerService(int port, Text serverBoxText, Text notificationText, ServerGUI serverGUI) throws IOException{
 
         this.portNumber = port;
+        this.serverGUI = serverGUI;
         this.serverBoxText = serverBoxText;
         this.notificationText = notificationText;
+
         
         setOnSucceeded(new EventHandler<WorkerStateEvent>(){
             @Override
             public void handle(WorkerStateEvent e){
-                serverBoxText.setText((String) e.getSource().getValue());
+                System.out.println((String)e.getSource().getValue());
             }
         });
 
@@ -36,20 +41,14 @@ public class ServerService extends Service<String>{
         return new Task<String>(){
             @Override
             protected String call() throws Exception{
-                server = new Server(portNumber, serverBoxText, notificationText);
-                return "Server Created";
+                server = new Server(portNumber, serverBoxText, notificationText, serverGUI);
+                System.out.println("I did something");
+                return "End of the server";
             }
         };
     }
 
-    public void stopService() throws Exception{
-        if(server!=null){
-            server.stopServer();
-        }
-        else{
-            System.out.println("No server to stop!");
-        }
-    }
+ 
 
     public Server getServer(){
         return server;
