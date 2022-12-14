@@ -1,13 +1,25 @@
 package Server;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.sql.*;
-import java.util.Map;
+
+import java.util.Base64;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import javafx.scene.text.Text;
 
@@ -24,6 +36,15 @@ public class MyServerThread extends Thread {
 
     String timeStamp;
     String ipAddress;
+
+    String uniqueUserID;
+    PrivateKey privateServerKey;
+    
+
+
+
+    //Key Stuff
+        DataOutputStream dataOut;
 
     public MyServerThread(Socket clientSocket, Text notificationText, Server server){
         this.clientSocket = clientSocket;
@@ -81,6 +102,8 @@ public class MyServerThread extends Thread {
                     writer.println("loginSuccess");
                     System.out.println("LoginSuccess");
 
+                    //TAKE IN SESSIONKEY
+
                     User me = new User(clientFName, clientLName, ipAddress, timeStamp);
                     server.addUser(me);                    
                     server.getOnlineMap().put(me.toString(), clientSocket);
@@ -100,23 +123,37 @@ public class MyServerThread extends Thread {
         }
     }
 
-    public void listenForMessages(User me) throws IOException{
-        notificationText.setText(me.toString() + " has entered the server.");
-        writer.println("Welcome " + me.toString());
-        writer.println(me.toString());
+    public void listenForMessages(User me) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException{
+        uniqueUserID = me.toString();
+        notificationText.setText(uniqueUserID + " has entered the server.");
+        writer.println("Welcome " + uniqueUserID);
+        writer.println(uniqueUserID);
 
+        String encSessionKey = reader.readLine();
 
+                //Decode -> Decrypt -> Decode Client Key
+                byte[] decodedKey = Base64.getMimeDecoder().decode(encSessionKey);
+
+                try {
+                    AES aes = new AES();
+                    //DECRYPT KEY
+                    String decryptedKey = aes.decryptUsingServerPrivateKey(decodedKey);
+                    //DECODE KEY 
+                    byte[] decryptedAndDecodedKey = Base64.getMimeDecoder().decode(decryptedKey);
+                    SecretKey sessionKey = new SecretKeySpec(decryptedAndDecodedKey, 0, decryptedAndDecodedKey.length, "AES");
+                    server.getSessionKeys().put(uniqueUserID, sessionKey);
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
         //Tell client how many other users there are online right now
         writer.println(server.getOnlineMap().size());
-
         //SEND ALL THE ONLINE USERS
         for(String userID: server.getOnlineMap().keySet()){
-            if(!userID.equals(me.toString())){
+            if(!userID.equals(uniqueUserID)){
                 writer.println(userID);
             }
 
         }
-
         writer.println("Online Users Populated");
 
         //The actual Listening bit
@@ -135,26 +172,51 @@ public class MyServerThread extends Thread {
                 }
              }
              else if(line.equals("INCOMING_MESSAGE_X9%(*")){
-                System.out.println("I made it here");
                 String recepient = reader.readLine();
                 System.out.println(recepient);
 
+                System.out.println("Recepient received");
+
+
+                String message = "";
+                String encMessage = reader.readLine();
+
+                //Decode -> Decrypt Messages
+                byte[] decodedMessage = Base64.getMimeDecoder().decode(encMessage);
+
+                AES aes = new AES();
+                try{
+                    aes.setSecretkey(server.getSessionKeys().get(uniqueUserID));
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+                    //DECRYPT MESSAGE
+                    message = aes.decrypt(decodedMessage);
+                    System.out.println(message);
+                    this.logMessage(message, uniqueUserID, recepient);
+
+                //Re-encrypt message using recepient's AES KEY and then encode it
+                //Encrypt AES KEY and then Encode it
+
+
+                 Socket recepientSocket = server.getOnlineMap().get(recepient);
+                 SecretKey recepientKey = server.getSessionKeys().get(recepient);
+                 aes.setSecretkey(recepientKey);
+                 String encodedMessage = Base64.getEncoder().encodeToString(aes.encrypt(message));
+
+                 PrintWriter tempWriter = new PrintWriter(recepientSocket.getOutputStream(), true);
+                 tempWriter.println("MESSAGE_INCOMING");
+                 tempWriter.println(encodedMessage);
+
+                }
                 
-                String message = reader.readLine();
-                System.out.println(message);
+            
 
 
-                Socket recepientSocket = server.getOnlineMap().get(recepient);
-                PrintWriter tempWriter = new PrintWriter(recepientSocket.getOutputStream(), true);
-                tempWriter.println("MESSAGE_INCOMING");
-                tempWriter.println(message);
-                this.logMessage(message, me.toString(), recepient);
-             }
-             else{
-               // this.logMessage(line, clientFName, clientLName);
-               System.out.println("This shoudln't get called");
 
-             }
+
+             
+             
          }
 
     }

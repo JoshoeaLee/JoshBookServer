@@ -7,6 +7,8 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.crypto.SecretKey;
+
 import javafx.scene.text.Text;
 
 public class Server {
@@ -16,6 +18,7 @@ public class Server {
     Text notificationText;
     ArrayList<User> onlineUsers = new ArrayList<>();
     HashMap<String, Socket> onlineUsersMap = new HashMap<>();
+    HashMap<String, SecretKey> sessionKeys = new HashMap<>();
 
     public Server(int port, Text serverBoxText, Text notificationText, ServerGUI serverGUI) throws IOException{
 
@@ -72,6 +75,10 @@ public class Server {
 
     public HashMap<String, Socket> getOnlineMap(){
         return onlineUsersMap;
+    }
+
+    public HashMap<String, SecretKey> getSessionKeys(){
+        return sessionKeys;
     }
     
 }
