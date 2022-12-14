@@ -56,6 +56,8 @@ public class MyServerThread extends Thread {
        
         try{
 
+            AES aes = new AES();
+
             reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             writer = new PrintWriter(clientSocket.getOutputStream(), true);
             System.out.println("A client request received at " + clientSocket);
@@ -94,9 +96,20 @@ public class MyServerThread extends Thread {
                 }
             }
             else if(createOrLog.equals("login")){
-                clientFName = reader.readLine();
-                clientLName = reader.readLine();
-                String clientPass = reader.readLine();
+                String encodedClientFName = reader.readLine();
+                String encodedClientLName = reader.readLine();
+                String encodedClientPass = reader.readLine();
+
+                //DECODE
+                byte[] encryptedFName = Base64.getDecoder().decode(encodedClientFName);
+                byte[] encryptedLName = Base64.getDecoder().decode(encodedClientLName);
+                byte[] encrtypedPWord = Base64.getDecoder().decode(encodedClientPass);
+
+                //DECRYPT
+                clientFName = aes.decryptUsingServerPrivateKey(encryptedFName);
+                clientLName = aes.decryptUsingServerPrivateKey(encryptedLName);
+                String clientPass = aes.decryptUsingServerPrivateKey(encrtypedPWord);
+
                 //IF LOGIN INFO IS CORRECT
                 if(checkLogIn(clientFName, clientLName, clientPass)){
                     writer.println("loginSuccess");
