@@ -219,6 +219,7 @@ public class MyServerThread extends Thread {
 
                  PrintWriter tempWriter = new PrintWriter(recepientSocket.getOutputStream(), true);
                  tempWriter.println("MESSAGE_INCOMING");
+                 tempWriter.println(uniqueUserID);
                  tempWriter.println(encodedMessage);
 
                 }
