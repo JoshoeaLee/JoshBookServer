@@ -15,7 +15,6 @@ import java.util.Scanner;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 
@@ -38,7 +37,8 @@ public class EncryptionHandler {
     }
     
 
-        /**
+        
+    /**
      * Reads in the server private key I have made and sets it.
      * @throws FileNotFoundException
      */
@@ -56,19 +56,6 @@ public class EncryptionHandler {
         } 
     }
     
-    
-    /**
-     * Generates an AES session key and sets it.
-     * @return the AES session key generated
-     */
-    public SecretKey generateKey() throws NoSuchAlgorithmException 
-    {
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        this.setSecretkey(keyGen.generateKey());       
-        return this.sessionKey; 
-    }
-    
-
     /**
      * Encrypts a message using the AES Session Key set
      * @param strDataToEncrypt The message to encrypt

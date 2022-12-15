@@ -10,6 +10,8 @@ import javafx.scene.text.Text;
 /**
  * Allows javaFX to be used while a thread is listening
  * When constructed, this class constructs a Server.
+ * 
+ * Service help I used - https://www.youtube.com/watch?v=Xb6j8VfHxJo
  */
 public class ServerService extends Service<String>{
 
