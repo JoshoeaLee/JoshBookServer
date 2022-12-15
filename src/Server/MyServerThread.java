@@ -21,12 +21,10 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import javafx.scene.text.Text;
 
 public class MyServerThread extends Thread {
 
     Socket clientSocket;
-    Text notificationText;
     String clientFName;
     String clientLName;
     Connection connection = null;
@@ -46,9 +44,8 @@ public class MyServerThread extends Thread {
     //Key Stuff
         DataOutputStream dataOut;
 
-    public MyServerThread(Socket clientSocket, Text notificationText, Server server){
+    public MyServerThread(Socket clientSocket, Server server){
         this.clientSocket = clientSocket;
-        this.notificationText = notificationText;
         this.server = server;
     }
 
@@ -80,6 +77,7 @@ public class MyServerThread extends Thread {
 
                     User me = new User(clientFName, clientLName, ipAddress, timeStamp);
                     server.getOnlineMap().put(me.toString(), clientSocket);
+                    server.gui.updateServerMessage("New User " + me.toString() + " has been created");
 
                     this.listenForMessages(me);
                 }
@@ -135,7 +133,6 @@ public class MyServerThread extends Thread {
 
     public void listenForMessages(User me) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NullPointerException{
         uniqueUserID = me.toString();
-        notificationText.setText(uniqueUserID + " has entered the server.");
         writer.println("Welcome " + uniqueUserID);
         writer.println(uniqueUserID);
 
@@ -170,6 +167,8 @@ public class MyServerThread extends Thread {
          while(true){
              String line = reader.readLine();
              if(line.equals("NEW_USER_ENTRANCE")){
+                server.gui.updateServerMessage(uniqueUserID + " has entered the chatroom.");
+
 
              
                 for(Socket client: server.getOnlineMap().values())
@@ -199,6 +198,8 @@ public class MyServerThread extends Thread {
                     message = aes.decrypt(decodedMessage);
                     System.out.println(message);
                     this.logMessage(message, uniqueUserID, recepient);
+                    server.gui.updateServerMessage(uniqueUserID + " has sent a message to " + recepient);
+
 
                 //Re-encrypt message using recepient's AES KEY and then encode it
                 //Encrypt AES KEY and then Encode it
@@ -220,8 +221,11 @@ public class MyServerThread extends Thread {
                     System.out.println("This got triggered");
 
 
+
                     String logOutUser = reader.readLine();
                     server.getOnlineMap().remove(logOutUser);
+                    server.gui.updateServerMessage(logOutUser + " has logged out.");
+
                     for(Socket client: server.getOnlineMap().values())
                 {
                     PrintWriter tempWriter = new PrintWriter(client.getOutputStream(), true);

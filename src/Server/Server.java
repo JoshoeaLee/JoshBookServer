@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.crypto.SecretKey;
@@ -15,14 +14,14 @@ public class Server {
 
     int port;
     ServerSocket listener;
-    Text notificationText;
     HashMap<String, Socket> onlineUsersMap = new HashMap<>();
     HashMap<String, SecretKey> sessionKeys = new HashMap<>();
+    ServerGUI gui;
 
-    public Server(int port, Text serverBoxText, Text notificationText, ServerGUI serverGUI) throws IOException{
+    public Server(int port, Text serverBoxText, ServerGUI serverGUI) throws IOException{
 
         this.port = port;
-        this.notificationText = notificationText;
+        this.gui = serverGUI;
         listener = new ServerSocket(port);
         serverBoxText.setText("Server started on port " + port);
         serverGUI.giveMeServer(this);
@@ -30,7 +29,7 @@ public class Server {
             System.out.println("Initial Connection Made");
             while(true){
                 Socket clientSocket = listener.accept();
-                new MyServerThread(clientSocket, notificationText, this).start();
+                new MyServerThread(clientSocket, this).start();
             }
             
         }
@@ -54,7 +53,6 @@ public class Server {
         if(!listener.isClosed()){
             try{
                 new CloseServerThread(listener).start();
-                notificationText.setText("Server has been stopped");
             }catch(Exception e){
                 e.printStackTrace();
             }

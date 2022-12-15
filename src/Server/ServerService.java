@@ -15,15 +15,13 @@ public class ServerService extends Service<String>{
     int portNumber;
     Server server;
     Text serverBoxText;
-    Text notificationText;
     ServerGUI serverGUI;
 
-    public ServerService(int port, Text serverBoxText, Text notificationText, ServerGUI serverGUI) throws IOException{
+    public ServerService(int port, Text serverBoxText, ServerGUI serverGUI) throws IOException{
 
         this.portNumber = port;
         this.serverGUI = serverGUI;
         this.serverBoxText = serverBoxText;
-        this.notificationText = notificationText;
 
         
         setOnSucceeded(new EventHandler<WorkerStateEvent>(){
@@ -41,7 +39,7 @@ public class ServerService extends Service<String>{
         return new Task<String>(){
             @Override
             protected String call() throws Exception{
-                server = new Server(portNumber, serverBoxText, notificationText, serverGUI);
+                server = new Server(portNumber, serverBoxText, serverGUI);
                 return "End of the server";
             }
         };

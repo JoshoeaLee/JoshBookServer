@@ -1,18 +1,16 @@
 package Server;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -24,7 +22,8 @@ import javafx.stage.Stage;
 
 public class ServerGUI extends Application {
 
-    public static TableView<User> dataView = new TableView<>(); 
+    public ListView<String> dataView = new ListView<>(); 
+    ObservableList<String> serverMessages = FXCollections.observableArrayList();
     private ServerService serverService;
     Server server;
 
@@ -39,14 +38,19 @@ public class ServerGUI extends Application {
         root.setLeft(serverSidebar);
 
         //Add Main Table
+        this.dataView.setPlaceholder(new Label("JoshBook Server"));
+        this.dataView.setItems(serverMessages);
         root.setCenter(dataView);
 
+        this.updateServerMessage("Hi");
+
         //Scene setup
-        Scene scene = new Scene(root,1000,1000);
+        Scene scene = new Scene(root,600,500);
         primaryStage.setScene(scene);
         primaryStage.setTitle("JoshBook Server");
         primaryStage.show();
     }
+
 
 
     /**
@@ -55,7 +59,7 @@ public class ServerGUI extends Application {
      */
     private VBox makeSidebar(){
 
-         //Port Number Insertion Box////////////////////////////////////////////////////////////////////////////////////////////////////////
+         //Port Number Selection Box////////////////////////////////////////////////////////////////////////////////////////////////////////
          Text portLabel = new Text("Select a Port Number: ");
          TextField portField = new TextField();        
 
@@ -71,48 +75,17 @@ public class ServerGUI extends Application {
          Button startServer = new Button("Start Server");
          Button stopServer = new Button("Stop Server");
  
-         
-         //stopServer.setDisable(true); //Can't Stop server before starting it.
- 
+          
          VBox serverControlBox = new VBox(10);
          serverControlBox.getChildren().addAll(serverInstructions, startServer, stopServer);
          serverControlBox.setMinHeight(160);
          serverControlBox.setAlignment(Pos.CENTER);
          serverControlBox.setBackground(new Background(new BackgroundFill(Color.LEMONCHIFFON, CornerRadii.EMPTY, Insets.EMPTY)));
- 
- 
-         //Database View Selection Box////////////////////////////////////////////////////////////////////////////////////////////////////////
-         Text sideBox3Text = new Text("Select Database");
 
-         ChoiceBox<String> databaseChoice = new ChoiceBox<String>();
-         databaseChoice.getItems().add("Users");
-         databaseChoice.getSelectionModel().selectFirst();
-
-         Button dataSelection = new Button("View Data");
-         dataSelection.setOnAction(click->{
-            this.retrieveDatabase(databaseChoice.getValue());
-         });
-
-         VBox databaseViewBox = new VBox(10);
-         databaseViewBox.getChildren().addAll(sideBox3Text, databaseChoice, dataSelection);
-         databaseViewBox.setMinHeight(160);
-         databaseViewBox.setAlignment(Pos.CENTER);
-         databaseViewBox.setBackground(new Background(new BackgroundFill(Color.PAPAYAWHIP, CornerRadii.EMPTY, Insets.EMPTY)));
- 
- 
-         //SideBox 4?////////////////////////////////////////////////////////////////////////////////////////////////////////
-         Text sideBox4Text = new Text("What will go here?");
-         VBox sideBox4 = new VBox(10);
-         sideBox4.getChildren().addAll(sideBox4Text);
-         sideBox4.setAlignment(Pos.CENTER);
-         sideBox4.setMinHeight(160);
-         sideBox4.setBackground(new Background(new BackgroundFill(Color.MISTYROSE, CornerRadii.EMPTY, Insets.EMPTY)));
 		
- 
- 
          //SideBar
          VBox sideBar = new VBox(10);
-         sideBar.getChildren().addAll(portBox, serverControlBox, databaseViewBox, sideBox4);
+         sideBar.getChildren().addAll(portBox, serverControlBox);
  
 
 
@@ -123,7 +96,7 @@ public class ServerGUI extends Application {
                        portNumber = Integer.parseInt(portField.getText());
         
                        try{
-                        serverService = new ServerService(portNumber, serverInstructions, sideBox4Text, ServerGUI.this);
+                        serverService = new ServerService(portNumber, serverInstructions, ServerGUI.this);
                         serverService.start();
                         server = serverService.getServer();
                         serverInstructions.setText("Server Started!");
@@ -158,64 +131,18 @@ public class ServerGUI extends Application {
          return sideBar;
     }
 
-    /**
-     * 
-     * @param database The selection the user makes regarding which database they want to see 
-     * information from (User/Friends/Messages)
-     */
-    private void retrieveDatabase(String database){
-        dataView.getItems().clear();
-        dataView.getColumns().clear();
-        if(database.equals("Users")){
-            this.getUserTable();
-        }
-    }
-
-
-
-
-
-        //https://jenkov.com/tutorials/javafx/tableview.html Was the template of code I used for this.
-    /**
-     * Returns a table which shows the users of JoshBook.
-     * @return Data regarding the users of JoshBook
-     */
-    private void getUserTable(){
-
-        ObservableList<User> userList = FXCollections.observableArrayList();
-
-        userList.add(new User("Josh", "Lee", "123.456", "Aug12"));
-        System.out.println(userList.get(0).getFirstName());
-
-        TableColumn<User, String> fNameColumn = new TableColumn<>("First Name");
-        fNameColumn.setMinWidth(150);
-        fNameColumn.setCellValueFactory(new PropertyValueFactory<User, String>("firstName"));
-
-        TableColumn<User, String> lNameColumn = new TableColumn<>("Last Name");
-        lNameColumn.setMinWidth(150);
-        lNameColumn.setCellValueFactory(new PropertyValueFactory<User, String>("lastName"));
-
-        TableColumn<User, String> ipColumn = new TableColumn<>("IP Address");
-        ipColumn.setMinWidth(200);
-        ipColumn.setCellValueFactory(new PropertyValueFactory<User, String>("IPAddress"));
-
-        TableColumn<User, String> timestampColumn = new TableColumn<>("Timestamp");
-        timestampColumn.setMinWidth(200);
-        timestampColumn.setCellValueFactory(new PropertyValueFactory<User, String>("timeStamp"));
-       
-
-        dataView.getItems().addAll(userList);
-        dataView.getColumns().addAll(fNameColumn, lNameColumn, ipColumn, timestampColumn);
-        dataView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        dataView.setPlaceholder(new Label("No Users Found!"));
-
-
+    public void updateServerMessage(String message){
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run(){
+        ServerGUI.this.serverMessages.add(message);
+    
+    }});
     }
 
     public void giveMeServer(Server s){
         this.server = s;
     }
-
 
 
     public static void main(String[] args) {
