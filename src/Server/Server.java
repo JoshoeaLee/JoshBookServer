@@ -16,7 +16,6 @@ public class Server {
     int port;
     ServerSocket listener;
     Text notificationText;
-    ArrayList<User> onlineUsers = new ArrayList<>();
     HashMap<String, Socket> onlineUsersMap = new HashMap<>();
     HashMap<String, SecretKey> sessionKeys = new HashMap<>();
 
@@ -37,13 +36,11 @@ public class Server {
         }
         catch(SocketException e){
            System.out.println("Server socket has been closed!");
-           System.out.println(listener);
         }
         finally{
             try {
                 if(!listener.isClosed()){
                     listener.close();
-                    System.out.println("OH NO!");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -65,13 +62,8 @@ public class Server {
      
     }
 
-    public ArrayList<User> getOnlineUsers(){
-        return onlineUsers;
-    }
 
-    public void addUser(User user){
-        onlineUsers.add(user);
-    }
+
 
     public HashMap<String, Socket> getOnlineMap(){
         return onlineUsersMap;

@@ -58,7 +58,6 @@ public class AES {
         Scanner sc = new Scanner(file);
         String serverPrivateKey = sc.nextLine();
         sc.close();
-        System.out.println(serverPrivateKey);
         byte[] serverPrivate = Base64.getMimeDecoder().decode(serverPrivateKey);
         try {
             PrivateKey privateServerKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(serverPrivate));

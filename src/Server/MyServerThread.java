@@ -60,16 +60,11 @@ public class MyServerThread extends Thread {
 
             reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             writer = new PrintWriter(clientSocket.getOutputStream(), true);
-            System.out.println("A client request received at " + clientSocket);
-
-        
 
             //Setting up Connection
-            String dbUser = "root";
-            String dbPass = "";
-            Class.forName("com.mysql.jdbc.Driver");
-            String url ="jdbc:mysql://localhost/JoshBook";     
-            connection = DriverManager.getConnection(url, dbUser, dbPass);
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+            String url ="jdbc:sqlserver://joshbooksql.database.windows.net:1433;database=XsSALGJjHDKdBTJa;user=XsSALGJjHDKdBTJa@joshbooksql;password=kj99jGP4T79ttQF;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;";     
+            connection = DriverManager.getConnection(url);
 
 
             String createOrLog = reader.readLine();
@@ -84,7 +79,6 @@ public class MyServerThread extends Thread {
                     writer.println("AccountCreated");
 
                     User me = new User(clientFName, clientLName, ipAddress, timeStamp);
-                    server.addUser(me);
                     server.getOnlineMap().put(me.toString(), clientSocket);
 
                     this.listenForMessages(me);
@@ -118,7 +112,6 @@ public class MyServerThread extends Thread {
                     //TAKE IN SESSIONKEY
 
                     User me = new User(clientFName, clientLName, ipAddress, timeStamp);
-                    server.addUser(me);                    
                     server.getOnlineMap().put(me.toString(), clientSocket);
 
                     this.listenForMessages(me);
@@ -131,12 +124,16 @@ public class MyServerThread extends Thread {
             }
 
         }
+        catch(NullPointerException e){
+            System.out.println("The client has disconnected");
+
+        }
         catch(Exception e){
             e.printStackTrace();
         }
     }
 
-    public void listenForMessages(User me) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException{
+    public void listenForMessages(User me) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NullPointerException{
         uniqueUserID = me.toString();
         notificationText.setText(uniqueUserID + " has entered the server.");
         writer.println("Welcome " + uniqueUserID);
@@ -186,11 +183,6 @@ public class MyServerThread extends Thread {
              }
              else if(line.equals("INCOMING_MESSAGE_X9%(*")){
                 String recepient = reader.readLine();
-                System.out.println(recepient);
-
-                System.out.println("Recepient received");
-
-
                 String message = "";
                 String encMessage = reader.readLine();
 
@@ -223,6 +215,23 @@ public class MyServerThread extends Thread {
                  tempWriter.println(encodedMessage);
 
                 }
+
+                else if(line.equals("LO357GGI1NG_O683UT_T)%#IME")){
+                    System.out.println("This got triggered");
+
+
+                    String logOutUser = reader.readLine();
+                    server.getOnlineMap().remove(logOutUser);
+                    for(Socket client: server.getOnlineMap().values())
+                {
+                    PrintWriter tempWriter = new PrintWriter(client.getOutputStream(), true);
+                    tempWriter.println("USER_LOGGING_OUT");
+                    tempWriter.println(logOutUser);
+                    
+                }
+
+
+                }
                 
             
 
@@ -240,7 +249,7 @@ public class MyServerThread extends Thread {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         String timeStampString = timestamp.toString();
 
-        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO JoshBook.users(`f_name`, `l_name`, `p_word`, `creation_timestamp`, `creation_ip`) VALUES (?, ?, ?, ?, ?);");
+        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO users(f_name, l_name, p_word, creation_timestamp, creation_ip) VALUES (?, ?, ?, ?, ?);");
         preparedStatement.setString(1, fName);
         preparedStatement.setString(2, lName);
         preparedStatement.setString(3, pWord);
@@ -271,7 +280,7 @@ public class MyServerThread extends Thread {
                 Timestamp messageTimestamp = new Timestamp(System.currentTimeMillis());
                 String messageTimestampString = messageTimestamp.toString();
 
-                PreparedStatement preparedStatementInsert = connection.prepareStatement("INSERT INTO JoshBook.messages(`message`, `time_stamp`, `message_status`, `sender`, `receiver`) VALUES (?, ?, ?, ?, ?);");
+                PreparedStatement preparedStatementInsert = connection.prepareStatement("INSERT INTO messages(message, time_stamp, message_status, sender, receiver) VALUES (?, ?, ?, ?, ?);");
                 preparedStatementInsert.setString(1, message);
                 preparedStatementInsert.setString(2, messageTimestampString);
                 preparedStatementInsert.setString(3, "Unread");
@@ -303,7 +312,7 @@ public class MyServerThread extends Thread {
      */
     public boolean checkUser(String fName, String lName) throws SQLException{
 
-        PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM `users` WHERE `f_name` = ? AND `l_name` = ?;");
+        PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM users WHERE f_name = ? AND l_name = ?;");
         preparedStatement.setString(1, fName);
         preparedStatement.setString(2, lName);
         ResultSet rs = preparedStatement.executeQuery();
@@ -318,7 +327,7 @@ public class MyServerThread extends Thread {
     }
 
     public boolean checkLogIn(String fName, String lName, String pWord) throws SQLException{
-        PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM `users` WHERE `f_name` = ? AND `l_name` = ? AND `p_word` = ?;");
+        PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM users WHERE f_name = ? AND l_name = ? AND p_word = ?;");
         preparedStatement.setString(1, fName);
         preparedStatement.setString(2, lName);
         preparedStatement.setString(3, pWord);

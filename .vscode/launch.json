@@ -10,8 +10,8 @@
             "request": "launch",
             "mainClass": "Server.ServerGUI",
             "projectName": "JoshBook_fd5b2f09",
-            "vmArgs": "--module-path lib/javafx-sdk-19/lib --add-modules javafx.controls,javafx.fxml"
-
+            "vmArgs": "--module-path /Users/joshualee/Code/SWEN504/JoshBook/JoshBook/lib/javafx-sdk-19/lib --add-modules javafx.controls,javafx.fxml"
+            
         }
     ]
 }

@@ -125,7 +125,6 @@ public class ServerGUI extends Application {
                        try{
                         serverService = new ServerService(portNumber, serverInstructions, sideBox4Text, ServerGUI.this);
                         serverService.start();
-                        System.out.println("Getting Server");
                         server = serverService.getServer();
                         serverInstructions.setText("Server Started!");
                        }
@@ -145,7 +144,6 @@ public class ServerGUI extends Application {
                             System.out.println("No server");
                         }
                         if(server!=null){
-                            System.out.println("Not null");
                             server.stopServer();
                         }
                         serverInstructions.setText("Server Stopped!");

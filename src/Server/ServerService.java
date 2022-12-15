@@ -42,7 +42,6 @@ public class ServerService extends Service<String>{
             @Override
             protected String call() throws Exception{
                 server = new Server(portNumber, serverBoxText, notificationText, serverGUI);
-                System.out.println("I did something");
                 return "End of the server";
             }
         };
