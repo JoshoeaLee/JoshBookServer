@@ -19,40 +19,29 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 
-
 /**
- *
- * @author ahmed
+ * METHODS INVOLVING ENCRYPTION AND DECRYPTION ARE TAKEN FROM ALI'S CODE.
+ * I added on the methods involving the 'Server Private Key'.
  */
-public class AES {
+public class EncryptionHandler {
     
-    /**
-     * Private Key that I have
-     */
-    private SecretKey secretkey; 
-
+    private SecretKey sessionKey; 
     private PrivateKey privateKey;
     
     
-    public AES() throws NoSuchAlgorithmException, FileNotFoundException 
+    /**
+     * Constructor of the Encryption Handler class. Gets the Server Private Key on construction.
+     */
+    public EncryptionHandler() throws NoSuchAlgorithmException, FileNotFoundException 
     {
         this.getPrivateServerKey();
     }
     
-    
-    /**
-	* Step 1. Generate a AES key using KeyGenerator 
-    */
-    
-    public SecretKey generateKey() throws NoSuchAlgorithmException 
-    {
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        this.setSecretkey(keyGen.generateKey());       
-        return this.secretkey;
-         
-    }
-    
 
+        /**
+     * Reads in the server private key I have made and sets it.
+     * @throws FileNotFoundException
+     */
     public void getPrivateServerKey() throws FileNotFoundException{
         File file = new File("./lib/serverPrivateKey");
         Scanner sc = new Scanner(file);
@@ -67,20 +56,43 @@ public class AES {
         } 
     }
     
-
     
+    /**
+     * Generates an AES session key and sets it.
+     * @return the AES session key generated
+     */
+    public SecretKey generateKey() throws NoSuchAlgorithmException 
+    {
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        this.setSecretkey(keyGen.generateKey());       
+        return this.sessionKey; 
+    }
+    
+
+    /**
+     * Encrypts a message using the AES Session Key set
+     * @param strDataToEncrypt The message to encrypt
+     * @return A byte array of the encrypted message
+     * @author ALI AHMED
+     */
     public byte[] encrypt (String strDataToEncrypt) throws 
             NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
             InvalidAlgorithmParameterException, IllegalBlockSizeException, 
             BadPaddingException
     {
-        Cipher aesCipher = Cipher.getInstance("AES"); // Must specify the mode explicitly as most JCE providers default to ECB mode!!
+        Cipher aesCipher = Cipher.getInstance("AES"); 
         aesCipher.init(Cipher.ENCRYPT_MODE, this.getSecretkey());
         byte[] byteDataToEncrypt = strDataToEncrypt.getBytes();
         byte[] byteCipherText = aesCipher.doFinal(byteDataToEncrypt);       
         return byteCipherText;
     }
     
+    /**
+     * Decrypts a byte array into a string using the session key
+     * @param strCipherText
+     * @return String message which is decrypted
+     * @author ALI AHMED
+     */
     public String decrypt (byte[] strCipherText) throws 
             NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
             InvalidAlgorithmParameterException, IllegalBlockSizeException, 
@@ -92,29 +104,31 @@ public class AES {
         return new String(byteDecryptedText);
     }   
 
+    /**
+     * Decrypts a byte array into a string message using THE PRVIATE SERVER KEY
+     * @param strCipherText
+     * @return String message which is decrypted.
+     * @author ALI AHMED 
+     */
     public String decryptUsingServerPrivateKey (byte[] strCipherText) throws 
     NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
     InvalidAlgorithmParameterException, IllegalBlockSizeException, 
     BadPaddingException
-{        
-Cipher rsaCipher = Cipher.getInstance("RSA"); // Must specify the mode explicitly as most JCE providers default to ECB mode!!				
-rsaCipher.init(Cipher.DECRYPT_MODE, this.getPrivateKey());        
-byte[] byteDecryptedText = rsaCipher.doFinal(strCipherText);        
-return new String(byteDecryptedText);
-}   
+    {        
+        Cipher rsaCipher = Cipher.getInstance("RSA"); 		
+        rsaCipher.init(Cipher.DECRYPT_MODE, this.getPrivateKey());        
+        byte[] byteDecryptedText = rsaCipher.doFinal(strCipherText);        
+        return new String(byteDecryptedText);
+    }   
 
-    /**
-     * @return the secretkey
-     */
+
+    //////GETTERS AND SETTERS
     public SecretKey getSecretkey() {
-        return secretkey;
+        return sessionKey;
     }
 
-    /**
-     * @param secretkey the secretkey to set
-     */
-    public void setSecretkey(SecretKey secretkey) {
-        this.secretkey = secretkey;
+    public void setSecretkey(SecretKey sessionKey) {
+        this.sessionKey = sessionKey;
     }
 
     public PrivateKey getPrivateKey(){

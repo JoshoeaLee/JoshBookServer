@@ -20,12 +20,16 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+/**
+ * GUI class for the Server side. 
+ * Will display any activities performed by the client-side users.
+ */
 public class ServerGUI extends Application {
 
-    public ListView<String> dataView = new ListView<>(); 
-    ObservableList<String> serverMessages = FXCollections.observableArrayList();
-    private ServerService serverService;
-    Server server;
+    public ListView<String> dataView = new ListView<>();  //ListView to display client activities
+    ObservableList<String> serverMessages = FXCollections.observableArrayList();   //Observable List containing records of all client activities
+    private ServerService serverService;  //A Service which allows the JavaFX gui to dynamically update.
+    Server server; //Server class which is responsible for accepting client connections and then firing them off to server threads.
 
     @Override
     public void start(Stage primaryStage) throws Exception{
@@ -37,12 +41,10 @@ public class ServerGUI extends Application {
         VBox serverSidebar = this.makeSidebar();
         root.setLeft(serverSidebar);
 
-        //Add Main Table
+        //Add Main Display Table
         this.dataView.setPlaceholder(new Label("JoshBook Server"));
         this.dataView.setItems(serverMessages);
         root.setCenter(dataView);
-
-        this.updateServerMessage("Hi");
 
         //Scene setup
         Scene scene = new Scene(root,600,500);
@@ -83,54 +85,64 @@ public class ServerGUI extends Application {
          serverControlBox.setBackground(new Background(new BackgroundFill(Color.LEMONCHIFFON, CornerRadii.EMPTY, Insets.EMPTY)));
 
 		
+         //Giving the buttons functionality and making responsive server side instructions.
+         this.addServerButtonFunctionalities(startServer, stopServer, serverInstructions, portField);
+
          //SideBar
          VBox sideBar = new VBox(10);
          sideBar.getChildren().addAll(portBox, serverControlBox);
- 
-
-
-         //Start Server Button
-                  startServer.setOnAction(e->{
-                    int portNumber = 0;
-                    try{
-                       portNumber = Integer.parseInt(portField.getText());
         
-                       try{
-                        serverService = new ServerService(portNumber, serverInstructions, ServerGUI.this);
-                        serverService.start();
-                        server = serverService.getServer();
-                        serverInstructions.setText("Server Started!");
-                       }
-                       catch(Exception error){
-                        serverInstructions.setText("Could not connect!");
-                       }
-        
-                    }catch(NumberFormatException error){
-                        serverInstructions.setText("Please enter a valid port number!");
-                    }
-                 });
-
-        //Stop Server Button
-                 stopServer.setOnAction(e->{
-                    try{
-                        if(server==null){
-                            System.out.println("No server");
-                        }
-                        if(server!=null){
-                            server.stopServer();
-                        }
-                        serverInstructions.setText("Server Stopped!");
-
-                    }
-                    catch(Exception error){
-                        error.printStackTrace();
-                        serverInstructions.setText("Could not stop server.");
-                    }
-
-                 });
          return sideBar;
     }
 
+    /**
+     * Gives the startServer, stopServer button functionality. 
+     * Updates serverInstructions based on what button is pressed.
+     * Uses the port number from the portField to connect to the client.
+     */
+    public void addServerButtonFunctionalities(Button startServer, Button stopServer, Text serverInstructions, TextField portField){
+
+         //START SERVER FUNCTIONALITY
+         startServer.setOnAction(e->{
+            int portNumber = 0;
+            try{
+               portNumber = Integer.parseInt(portField.getText());
+               try{
+                serverService = new ServerService(portNumber, serverInstructions, ServerGUI.this);
+                serverService.start();
+                server = serverService.getServer();
+                serverInstructions.setText("Server Started!");
+               }
+               catch(Exception error){
+                serverInstructions.setText("Could not connect!");
+               }
+            }catch(NumberFormatException error){
+                serverInstructions.setText("Please enter a valid port number!");
+            }
+         });
+
+         //STOP SERVER BUTTON FUNCTIONALITY
+         stopServer.setOnAction(e->{
+            try{
+                if(server==null){
+                    System.out.println("No server");
+                }
+                if(server!=null){
+                    server.stopServer();
+                }
+                serverInstructions.setText("Server Stopped!");
+            }
+            catch(Exception error){
+                error.printStackTrace();
+                serverInstructions.setText("Could not stop server.");
+            }
+         });
+    }
+
+    /**
+     * Updates the listview with messages regarding the client's actions.
+     * MIRO TAUGHT ME ABOUT RUNNABLE
+     */
     public void updateServerMessage(String message){
         Platform.runLater(new Runnable() {
             @Override
@@ -140,7 +152,8 @@ public class ServerGUI extends Application {
     }});
     }
 
-    public void giveMeServer(Server s){
+    //Getter
+    public void setServer(Server s){
         this.server = s;
     }
 

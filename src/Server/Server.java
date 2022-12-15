@@ -5,11 +5,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.HashMap;
-
 import javax.crypto.SecretKey;
-
 import javafx.scene.text.Text;
 
+/*
+ * Opens a server socket and then listens for clients. When a client comes, the server makes a new server thread and lets that thread 
+ * deal with the client.
+ */
 public class Server {
 
     int port;
@@ -22,9 +24,10 @@ public class Server {
 
         this.port = port;
         this.gui = serverGUI;
-        listener = new ServerSocket(port);
+        listener = new ServerSocket(port);  
         serverBoxText.setText("Server started on port " + port);
-        serverGUI.giveMeServer(this);
+        serverGUI.setServer(this);
+
         try{
             System.out.println("Initial Connection Made");
             while(true){
@@ -36,7 +39,7 @@ public class Server {
         catch(SocketException e){
            System.out.println("Server socket has been closed!");
         }
-        finally{
+        finally{ //Making sure that the server socket gets closed.
             try {
                 if(!listener.isClosed()){
                     listener.close();
@@ -45,11 +48,12 @@ public class Server {
                 e.printStackTrace();
             }
         }
-
     }
 
+    /*
+     * ServerSocket can't be closed directly from here. A thread needs to be made.
+     */
     public void stopServer(){
-        System.out.println("Closing Server.java class");
         if(!listener.isClosed()){
             try{
                 new CloseServerThread(listener).start();
@@ -60,10 +64,8 @@ public class Server {
      
     }
 
-
-
-
-    public HashMap<String, Socket> getOnlineMap(){
+    //I've chosen the server class to hold my hashmaps of ClientUserId/ClientSocket and ClientUserId/SessionKey
+    public HashMap<String, Socket> getOnlineUsers(){
         return onlineUsersMap;
     }
 
