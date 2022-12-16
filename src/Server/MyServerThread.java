@@ -48,8 +48,7 @@ public class MyServerThread extends Thread {
        
         try{
 
-            //ENCRYPTION HANDLER
-            EncryptionHandler encryptionHandler = new EncryptionHandler();
+  
 
             //READER AND WRITER
             reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -60,14 +59,8 @@ public class MyServerThread extends Thread {
             String url ="jdbc:sqlserver://joshbooksql.database.windows.net:1433;database=XsSALGJjHDKdBTJa;user=XsSALGJjHDKdBTJa@joshbooksql;password=kj99jGP4T79ttQF;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;";     
             connection = DriverManager.getConnection(url);
 
-            //READS IF CLIENT IS LOGGING IN OR CREATING ACCOUNT
-            String createOrLog = reader.readLine();
-            if(createOrLog.equals("createAccount")){
-                this.accountCreation(encryptionHandler);
-            }
-            else if(createOrLog.equals("login")){
-                this.loginUser(encryptionHandler);
-            }
+            //CHECK IF USER IS CREATING AN ACCOUNT OR LOGGING IN
+            this.createOrLog();    
 
         }
         catch(NullPointerException e){
@@ -76,6 +69,24 @@ public class MyServerThread extends Thread {
         catch(Exception e){
             e.printStackTrace();
         }
+    }
+
+
+    /*
+     * Listens to see if user is going to login or create a new account. 
+     * Then performs the necessary action.
+     */
+    public void createOrLog() throws Exception{
+            //ENCRYPTION HANDLER
+            EncryptionHandler encryptionHandler = new EncryptionHandler();
+            //READS IF CLIENT IS LOGGING IN OR CREATING ACCOUNT
+            String createOrLog = reader.readLine();
+            if(createOrLog.equals("createAccount")){
+                this.accountCreation(encryptionHandler);
+            }
+            else if(createOrLog.equals("login")){
+                this.loginUser(encryptionHandler);
+            }
     }
 
     /*
@@ -115,6 +126,7 @@ public class MyServerThread extends Thread {
         }
         else{
             writer.println("AccountFailure");
+            this.createOrLog();
         }
     }
 
@@ -150,6 +162,7 @@ public class MyServerThread extends Thread {
                 }
                 else{
                     writer.println("loginFail");
+                    this.createOrLog();
                 }
     }
 
