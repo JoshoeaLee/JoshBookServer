@@ -4,5 +4,6 @@
     "java.project.referencedLibraries": [
         "lib/**/*.jar",
         "/Users/joshualee/Downloads/sqljdbc_11.2\\enu/mssql-jdbc-11.2.1.jre18.jar"
-    ]
+    ],
+    "java.dependency.packagePresentation": "hierarchical"
 }

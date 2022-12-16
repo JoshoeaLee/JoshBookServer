@@ -1,7 +1,6 @@
 package Server;
 
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -43,8 +42,8 @@ public class EncryptionHandler {
      * @throws FileNotFoundException
      */
     public void getPrivateServerKey() throws FileNotFoundException{
-        File file = new File("./lib/serverPrivateKey");
-        Scanner sc = new Scanner(file);
+        
+        Scanner sc = new Scanner(EncryptionHandler.class.getResourceAsStream("serverPrivateKey.txt"));
         String serverPrivateKey = sc.nextLine();
         sc.close();
         byte[] serverPrivate = Base64.getMimeDecoder().decode(serverPrivateKey);
@@ -91,12 +90,7 @@ public class EncryptionHandler {
         return new String(byteDecryptedText);
     }   
 
-    /**
-     * Decrypts a byte array into a string message using THE PRVIATE SERVER KEY
-     * @param strCipherText
-     * @return String message which is decrypted.
-     * @author ALI AHMED 
-     */
+
     public String decryptUsingServerPrivateKey (byte[] strCipherText) throws 
     NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
     InvalidAlgorithmParameterException, IllegalBlockSizeException, 
